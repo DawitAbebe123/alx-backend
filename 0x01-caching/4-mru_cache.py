@@ -1,54 +1,39 @@
-#!/usr/bin/python3
-""" 4. MRU Caching
+#!/usr/bin/env python3
+"""Most Recently Used caching module.
 """
+from collections import OrderedDict
 
-from collections import deque
-
-BaseCaching = __import__("base_caching").BaseCaching
+from base_caching import BaseCaching
 
 
 class MRUCache(BaseCaching):
-    """ Create a class MRUCache that inherits from BaseCaching and is a caching
-    system
+    """Represents an object that allows storing and
+    retrieving items from a dictionary with an MRU
+    removal mechanism when the limit is reached.
     """
-
     def __init__(self):
-        """ Init
+        """Initializes the cache.
         """
         super().__init__()
-        self.queue = deque()
+        self.cache_data = OrderedDict()
 
     def put(self, key, item):
-        """ Must assign to the dictionary self.cache_data the item value for
-        the key key
+        """Adds an item in the cache.
         """
-        if key and item:
-            if key in self.cache_data:
-                self.queue.remove(key)
-            elif self.is_full():
-                self.evict()
-            self.queue.append(key)
+        if key is None or item is None:
+            return
+        if key not in self.cache_data:
+            if len(self.cache_data) + 1 > BaseCaching.MAX_ITEMS:
+                mru_key, _ = self.cache_data.popitem(False)
+                print("DISCARD:", mru_key)
+            self.cache_data[key] = item
+            self.cache_data.move_to_end(key, last=False)
+        else:
             self.cache_data[key] = item
 
     def get(self, key):
-        """ Must return the value in self.cache_data linked to key.
+        """Retrieves an item by key.
         """
-        if key in self.cache_data:
-            self.queue.remove(key)
-            self.queue.append(key)
-            return self.cache_data.get(key)
-
-    def is_full(self):
-        """ If the number of items in self.cache_data is higher that
-        BaseCaching.MAX_ITEMS
-        """
-        return len(self.cache_data) >= self.MAX_ITEMS
-
-    def evict(self):
-        """ you must print DISCARD: with the key discarded and following by a
-        new line
-        """
-        popped = self.queue.pop()
-        del self.cache_data[popped]
-        print("DISCARD: " + str(popped))
-
+        if key is not None and key in self.cache_data:
+            self.cache_data.move_to_end(key, last=False)
+        return self.cache_data.get(key, None)
